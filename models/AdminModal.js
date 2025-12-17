@@ -1,8 +1,7 @@
-// models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const UserSchema = new mongoose.Schema({
+const AdminSchema = new mongoose.Schema({
     firstName: {
         type: String,
         required: true,
@@ -23,7 +22,7 @@ const UserSchema = new mongoose.Schema({
     phoneNumber: {
         type: Number,
     },
-    userAddress: {
+    adminAddress: {
         type: String,
     },
     country: {
@@ -33,7 +32,7 @@ const UserSchema = new mongoose.Schema({
         type: String,
         default: '/uploads/default_profile.png' 
     },
-    userAge: {
+    adminAge: {
         type: Number,
     },
     role:{
@@ -43,10 +42,10 @@ const UserSchema = new mongoose.Schema({
     timestamps: true
 });
 
-UserSchema.methods.matchPassword = async function (enteredPassword) {
+AdminSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 }
 
-const User = mongoose.model('User', UserSchema);
+const Admin = mongoose.model('Admin', AdminSchema);
 
-module.exports = User; 
+module.exports = Admin; 

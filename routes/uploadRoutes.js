@@ -23,9 +23,7 @@ const upload = multer({
 }).single('profileImage'); 
 
 router.post('/upload', protect, (req, res) => {
-    // console.log(req.user._id)
     const userId = req.user._id;
-    // console.log(userId + " userid-- ","req.body.userId-> " + req.body.userId)
     
     upload(req, res, async function (err) { // ⭐️ Add 'async' keyword here
         if (err || !req.file) {
@@ -36,14 +34,11 @@ router.post('/upload', protect, (req, res) => {
         // 1. Define the path where the image can be accessed publicly
         const imagePath = `/uploads/${req.file.filename}`;
 
-        // 2. ⭐️ PERSISTENCE FIX: Update the MongoDB User record ⭐️
         try {
             if (!userId) {
-                // This means your frontend didn't include the userId field in FormData
                 return res.status(400).json({ msg: 'User ID is missing from the request.' });
             }
             
-            // Find the user and update the profileImagePath field
             const updatedUser = await User.findByIdAndUpdate(
                 userId,
                 { profileImagePath: imagePath }, // ⭐️ Save the path to the user document
@@ -54,7 +49,7 @@ router.post('/upload', protect, (req, res) => {
                  return res.status(404).json({ msg: 'User not found in database.' });
             }
 
-            // 3. Success response
+            // Success response
             res.status(200).json({ 
                 msg: 'Image uploaded and path saved successfully', 
                 filePath: imagePath,
@@ -64,7 +59,6 @@ router.post('/upload', protect, (req, res) => {
         } catch (dbError) {
              console.error('Database Update Error:', dbError.message);
              // Delete the file we just saved if the DB update fails
-             // (Requires fs module, omitted for simplicity, but good practice)
              res.status(500).json({ msg: 'Server error during database update.' });
         }
     });

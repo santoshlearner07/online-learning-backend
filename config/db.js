@@ -5,7 +5,6 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const MONGO_URI = dotenv.config().parsed.MONGO_URI;
-console.log(process.env.MONGO_URI)
  
 const connectDB = async () => {
     try {   
