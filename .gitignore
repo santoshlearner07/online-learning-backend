@@ -1,0 +1,42 @@
+# Dependencies
+# Node.js dependencies (huge folder, must be ignored)
+/node_modules
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Testing
+/coverage
+/.nyc_output
+
+# Production/Build
+# Compiled code and build output that should not be tracked
+/dist
+/build
+/out
+/release
+
+# Environment variables
+# CRITICAL: Contains API keys, passwords, and sensitive settings
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.*.local
+
+# IDEs and Editors
+# macOS
+.DS_Store
+# Visual Studio Code
+.vscode/
+# Sublime Text
+*.sublime-workspace
+# IntelliJ / WebStorm
+.idea/
+
+# macOS / Linux executables
+npm-debug.log
