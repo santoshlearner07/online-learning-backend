@@ -26,7 +26,7 @@ router.post('/register', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
         user = new User({
-            firstName, lastName, email, password: hashedPassword, phoneNumber, userAddress, country, userAge, role: 'student'
+            firstName, lastName, email, password: hashedPassword, phoneNumber, userAddress, country, userAge, role
         });
         await user.save();
 
@@ -73,6 +73,8 @@ router.get('/profile', protect, async (req, res) => {
         res.status(404).json({ msg: 'User not found' });
     }
 });
+
+
 
 // router.put is used for updating existing data
 router.put('/profile', protect, async (req, res) => {

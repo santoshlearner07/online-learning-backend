@@ -28,15 +28,15 @@ const AdminSchema = new mongoose.Schema({
     country: {
         type: String,
     },
-    profileImagePath: { 
+    profileImagePath: {
         type: String,
-        default: '/uploads/default_profile.png' 
+        default: '/uploads/default_profile.png'
     },
     adminAge: {
         type: Number,
     },
-    role:{
-        type:String,
+    role: {
+        type: String,
     }
 }, {
     timestamps: true
