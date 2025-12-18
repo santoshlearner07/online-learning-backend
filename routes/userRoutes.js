@@ -13,7 +13,7 @@ const generateToken = (id) => {
 
 router.post('/register', async (req, res) => {
     try {
-        const { firstName, lastName, email, password, phoneNumber, userAddress, country, userAge } = req.body;
+        const { firstName, lastName, email, password, phoneNumber, userAddress, country, userAge, role } = req.body;
 
         if (!firstName || !email) {
             return res.status(400).json({ msg: 'Please enter all required fields.' });
@@ -55,10 +55,38 @@ router.post('/login', async (req, res) => {
             number: user.phoneNumber,
             country: user.country,
             age: user.userAge,
+            demoStatus: user.demoStatus,
             token: generateToken(user._id),
         });
     } else {
         res.status(401).json({ msg: 'Invalid email or password' });
+    }
+})
+
+router.put('/demo-booking', protect, async (req, res) => {
+    try {
+        const { demoSlot } = req.body;
+        //    console.log("first", req.body)
+        if (!demoSlot) {
+            return res.status(400).json({ message: 'Please provide a demo slot' });
+        }
+        const user = await User.findById(req.user._id)
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        user.demoSlot = new Date(demoSlot);
+        user.demoStatus = 'SCHEDULED';
+        user.subject = req.body.subject;
+        await user.save();
+
+        res.status(200).json({
+            message: 'Demo scheduled successfully',
+            demoStatus: user.demoStatus,
+            demoSlot: user.demoSlot,
+            subject:user.subject
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error });
     }
 })
 

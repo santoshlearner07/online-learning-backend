@@ -29,16 +29,27 @@ const UserSchema = new mongoose.Schema({
     country: {
         type: String,
     },
-    profileImagePath: { 
+    profileImagePath: {
         type: String,
-        default: '/uploads/default_profile.png' 
+        default: '/uploads/default_profile.png'
     },
     userAge: {
         type: Number,
     },
-    role:{
-        type:String,
-    }
+    role: {
+        type: String,
+    },
+    subject: {
+        type: String,
+    },
+    demoStatus: {
+        type: String,
+        enum: ['NOT_SCHEDULED', 'SCHEDULED', 'COMPLETED', 'MISSED'],
+        default: 'NOT_SCHEDULED'
+    },
+    demoSlot: {
+        type: Date, // Stores the specific time for the 1:1 session
+    },
 }, {
     timestamps: true
 });

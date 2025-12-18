@@ -5,7 +5,7 @@ const Admin = require('../models/AdminModal')
  
 const protect = async (req, res, next) => {
     let token;
-
+    // console.log(token)
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {
             //  Get token from header (e.g., "Bearer XXX.YYY.ZZZ")
