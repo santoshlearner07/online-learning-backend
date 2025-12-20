@@ -5,6 +5,7 @@ const connectDB = require('./config/db'); // Import the DB connection function
 const userRoutes = require('./routes/userRoutes'); // Import the router
 const uploadRoutes = require('./routes/uploadRoutes')
 const adminRoutes = require('./routes/adminRoutes')
+const teacherRoutes = require('./routes/teacherRoutes')
 connectDB();
 
 const app = express();
@@ -14,6 +15,7 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api', userRoutes);
 app.use('/api', uploadRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/teacher', teacherRoutes);
 
 app.get('/', (req, res) => {
     res.send('API is running...');

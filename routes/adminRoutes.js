@@ -68,6 +68,7 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     const admin = await Admin.findOne({ email });
+    console.log(req.body)
     if (admin && (await admin.matchPassword(password))) {
         res.json({
             _id: admin._id,
@@ -102,7 +103,6 @@ router.get('/alluser', protectAdmin,admin, async (req, res) => {
 
 router.get('/alladmin',async(req,res)=>{
     try {
-
         const admins = await Admin.find({}).select('-password')
         if (admins) {
             res.json(admins)
@@ -114,63 +114,5 @@ router.get('/alladmin',async(req,res)=>{
         res.status(500).json({ msg: "Server error" })
     }
 })
-
-// router.get('/profile', protect, async (req, res) => {
-//     // req.admin is populated by the 'protect' middleware
-//     const admin = await admin.findById(req.admin._id).select('-password');
-
-//     if (admin) {
-//         // Send the admin object, which includes the profileImage path
-//         res.json(admin);
-//     } else {
-//         res.status(404).json({ msg: 'admin not found' });
-//     }
-// });
-
-// router.put is used for updating existing data
-// router.put('/profile', protect, async (req, res) => {
-//     try {
-//         // req.admin._id comes from your 'protect' middleware
-//         const admin = await admin.findById(req.admin._id);
-
-//         if (admin) {
-//             // Used the || operator to keep the old value if the new one isn't sent
-//             admin.firstName = req.body.firstName || admin.firstName;
-//             admin.lastName = req.body.lastName || admin.lastName;
-//             admin.email = req.body.email || admin.email;
-//             admin.adminAddress = req.body.address || admin.adminAddress;
-//             admin.phoneNumber = req.body.number || admin.phoneNumber;
-//             admin.country = req.body.country || admin.country;
-//             admin.adminAge = req.body.age || admin.adminAge;
-
-//             // If the admin changed their password 
-//             if (req.body.password) {
-//                 admin.password = req.body.password;
-//             }
-
-//             const updatedadmin = await admin.save();
-
-//             // Send back the updated admin data (matching your login response structure)
-//             res.json({
-//                 _id: updatedadmin._id,
-//                 firstName: updatedadmin.firstName,
-//                 lastName: updatedadmin.lastName,
-//                 email: updatedadmin.email,
-//                 address: updatedadmin.adminAddress,
-//                 number: updatedadmin.phoneNumber,
-//                 country: updatedadmin.country,
-//                 age: updatedadmin.adminAge,
-//                 // You don't necessarily need to generate a new token 
-//                 // unless you want to refresh the session
-//                 token: req.headers.authorization?.split(' ')[1],
-//             });
-//         } else {
-//             res.status(404).json({ msg: 'admin not found' });
-//         }
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ msg: 'Server error during profile update' });
-//     }
-// });
 
 module.exports = router; 
