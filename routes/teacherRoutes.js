@@ -28,7 +28,7 @@ router.post('/register', async (req, res) => {
         const namePart = firstName.substring(0, 4);
         const randomPart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
         const generatedPassword = `${namePart}${experience}@ITB${randomPart}`;
-        
+
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(generatedPassword, salt);
 
@@ -56,17 +56,33 @@ router.post('/register', async (req, res) => {
     }
 });
 
-router.get('/get-teachers',async(req,res)=>{
+router.get('/get-teachers', async (req, res) => {
     try {
         const teachers = await Teacher.find({}).select('-password')
         if (teachers) {
             res.json(teachers)
         } else {
-            res.status(404).json({ msg: "No user found" });
+            res.status(404).json({ msg: "No Teacher found" });
         }
     } catch (error) {
         console.error('Error fetching users', error)
         res.status(500).json({ msg: "Server error" })
+    }
+})
+
+router.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+
+    const teacher = await Teacher.findOne({ email });
+    if (teacher) {
+        res.json({
+            _id: teacher._id,
+            firstName: teacher.firstName,
+            email: teacher.email,
+            token: generateToken(teacher._id),
+        });
+    } else {
+        res.status(401).json({ msg: 'Invalid email or password' });
     }
 })
 

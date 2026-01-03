@@ -3,8 +3,9 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/AdminModal')
 const bcrypt = require('bcryptjs');
-const { admin, protectAdmin } = require('../middleware/authMiddleware');
+const { admin, protectAdmin, protect } = require('../middleware/authMiddleware');
 const User = require('../models/User');
+const Teacher = require('../models/TeacherModel');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -27,9 +28,6 @@ router.post('/register', async (req, res) => {
             userAge,      // Changed from adminAge to match your frontend
             role
         } = req.body;
-
-        // ... existing validation and hashing ...
-
 
         if (!firstName || !email) {
             return res.status(400).json({ msg: 'Please enter all required fields.' });
@@ -114,5 +112,53 @@ router.get('/alladmin',async(req,res)=>{
         res.status(500).json({ msg: "Server error" })
     }
 })
+
+router.put('/allocate', protectAdmin, admin, async (req, res) => {
+    const { teacherId, studentId } = req.body;
+    try {
+        const updateTeacher = Teacher.findByIdAndUpdate(
+            teacherId,
+            { $addToSet: { students: studentId } },
+            { new: true }
+        );
+
+        const updateStudent = User.findByIdAndUpdate(
+            studentId,
+            { teacher: teacherId },
+            { new: true }
+        );
+
+        await Promise.all([updateTeacher, updateStudent]);
+
+        res.status(200).json({ msg: 'Allocation successful' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: 'Server error during allocation' });
+    }
+});
+
+router.put('/deallocate', protectAdmin, admin, async (req, res) => {
+    const { teacherId, studentId } = req.body;
+
+    try {
+        // Remove student ID from the Teacher's array
+        const updateTeacher = Teacher.findByIdAndUpdate(
+            teacherId,
+            { $pull: { students: studentId } } // $pull removes the specific ID
+        );
+
+        // Clear the teacher field from the Student record
+        const updateStudent = User.findByIdAndUpdate(
+            studentId,
+            { $set: { teacher: null } }
+        );
+
+        await Promise.all([updateTeacher, updateStudent]);
+
+        res.status(200).json({ msg: 'Teacher removed successfully' });
+    } catch (error) {
+        res.status(500).json({ msg: 'Server error during deallocation' });
+    }
+});
 
 module.exports = router; 

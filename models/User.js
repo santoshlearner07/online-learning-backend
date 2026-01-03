@@ -50,9 +50,14 @@ const UserSchema = new mongoose.Schema({
     demoSlot: {
         type: Date, // Stores the specific time for the 1:1 session
     },
+    teacher: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Teacher',
+        default: null
+    },
 }, {
     timestamps: true
-}); 
+});
 
 UserSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
