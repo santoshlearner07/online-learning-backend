@@ -7,6 +7,7 @@ const { admin, protectAdmin, protect } = require('../middleware/authMiddleware')
 const User = require('../models/User');
 const Teacher = require('../models/TeacherModel');
 const ScheduleClass = require('../models/ScheduleClass');
+const crypto = require('crypto');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -209,6 +210,9 @@ router.post('/schedule-class-recurring', protectAdmin, admin, async (req, res) =
         for (let i = 0; i < occurrences; i++) {
             const start = new Date(currentStart);
             const end = new Date(start.getTime() + durationInMinutes * 60000);
+            // Unique link for meeting
+            const uniqueRoom = crypto.randomBytes(8).toString('hex');
+            const meetingLink = `https://meet.jit.si/${subject.replace(/\s+/g, '-')}-${uniqueRoom}`;
 
             scheduleBatch.push({
                 studentId,
@@ -216,6 +220,7 @@ router.post('/schedule-class-recurring', protectAdmin, admin, async (req, res) =
                 subject,
                 startTime: start,
                 endTime: end,
+                meetingLink,
                 status: 'UPCOMING'
             });
 
