@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db'); // Import the DB connection function

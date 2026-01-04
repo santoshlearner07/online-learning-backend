@@ -10,7 +10,7 @@ const TeacherSchema = new mongoose.Schema({
     students: [
         {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'User' // Must match the name in mongoose.model('User', ...)
+            ref: 'User' 
         }
     ],
     role: { type: String, default: 'teacher' }

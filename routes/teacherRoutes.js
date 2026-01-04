@@ -7,7 +7,7 @@ const { protect } = require('../middleware/authMiddleware');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '1d', // Token expires in 1 day
+        expiresIn: '1d', 
     });
 };
 
@@ -24,7 +24,6 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ msg: 'Teacher with this email already exists.' });
         }
 
-        // 3. Generate and HASH password
         const namePart = firstName.substring(0, 4);
         const randomPart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
         const generatedPassword = `${namePart}${experience}@ITB${randomPart}`;
@@ -39,14 +38,14 @@ router.post('/register', async (req, res) => {
             experience,
             qualification,
             phoneNumber,
-            password: hashedPassword // Save the HASH, not the plain text
+            password: hashedPassword 
         });
 
         await teacher.save();
 
         res.status(201).json({
             msg: 'Teacher registered successfully',
-            tempPassword: generatedPassword, // Send this back so you can show the admin the password
+            tempPassword: generatedPassword, 
             data: teacher
         });
 

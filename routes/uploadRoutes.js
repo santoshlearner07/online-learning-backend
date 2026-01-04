@@ -1,12 +1,9 @@
-// routes/uploadRoutes.js
-
 const express = require('express');
 const multer = require('multer');
 const router = express.Router();
-const User = require('../models/User'); // ⭐️ Import your User model
+const User = require('../models/User'); 
 const { protect } = require('../middleware/authMiddleware');
 
-// ... (Multer storage and upload configuration remains the same)
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, 'uploads/'); 
@@ -27,11 +24,9 @@ router.post('/upload', protect, (req, res) => {
     
     upload(req, res, async function (err) { // ⭐️ Add 'async' keyword here
         if (err || !req.file) {
-             // Handle errors or missing file
              return res.status(400).json({ msg: 'File upload failed or no file selected.' });
         }
         
-        // 1. Define the path where the image can be accessed publicly
         const imagePath = `/uploads/${req.file.filename}`;
 
         try {
@@ -49,7 +44,6 @@ router.post('/upload', protect, (req, res) => {
                  return res.status(404).json({ msg: 'User not found in database.' });
             }
 
-            // Success response
             res.status(200).json({ 
                 msg: 'Image uploaded and path saved successfully', 
                 filePath: imagePath,
@@ -58,7 +52,6 @@ router.post('/upload', protect, (req, res) => {
 
         } catch (dbError) {
              console.error('Database Update Error:', dbError.message);
-             // Delete the file we just saved if the DB update fails
              res.status(500).json({ msg: 'Server error during database update.' });
         }
     });

@@ -4,10 +4,11 @@ const User = require('../models/User'); // Adjust path as needed
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { protect } = require('../middleware/authMiddleware');
+const ScheduleClass = require('../models/ScheduleClass');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '1d', // Token expires in 1 day
+        expiresIn: '1d', 
     });
 };
 
@@ -66,7 +67,6 @@ router.post('/login', async (req, res) => {
 router.put('/demo-booking', protect, async (req, res) => {
     try {
         const { demoSlot } = req.body;
-        //    console.log("first", req.body)
         if (!demoSlot) {
             return res.status(400).json({ message: 'Please provide a demo slot' });
         }
@@ -91,11 +91,9 @@ router.put('/demo-booking', protect, async (req, res) => {
 })
 
 router.get('/profile', protect, async (req, res) => {
-    // req.user is populated by the 'protect' middleware
     const user = await User.findById(req.user._id).select('-password');
 
     if (user) {
-        // Send the user object, which includes the profileImage path
         res.json(user);
     } else {
         res.status(404).json({ msg: 'User not found' });
@@ -104,14 +102,11 @@ router.get('/profile', protect, async (req, res) => {
 
 
 
-// router.put is used for updating existing data
 router.put('/profile', protect, async (req, res) => {
     try {
-        // req.user._id comes from your 'protect' middleware
         const user = await User.findById(req.user._id);
 
         if (user) {
-            // Used the || operator to keep the old value if the new one isn't sent
             user.firstName = req.body.firstName || user.firstName;
             user.lastName = req.body.lastName || user.lastName;
             user.email = req.body.email || user.email;
@@ -120,14 +115,12 @@ router.put('/profile', protect, async (req, res) => {
             user.country = req.body.country || user.country;
             user.userAge = req.body.age || user.userAge;
 
-            // If the user changed their password 
             if (req.body.password) {
                 user.password = req.body.password;
             }
 
             const updatedUser = await user.save();
 
-            // Send back the updated user data (matching your login response structure)
             res.json({
                 _id: updatedUser._id,
                 firstName: updatedUser.firstName,
@@ -137,8 +130,6 @@ router.put('/profile', protect, async (req, res) => {
                 number: updatedUser.phoneNumber,
                 country: updatedUser.country,
                 age: updatedUser.userAge,
-                // You don't necessarily need to generate a new token 
-                // unless you want to refresh the session
                 token: req.headers.authorization?.split(' ')[1],
             });
         } else {
@@ -147,6 +138,22 @@ router.put('/profile', protect, async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ msg: 'Server error during profile update' });
+    }
+});
+
+router.get('/my-schedule',protect, async (req, res) => {
+    try {
+        const classes = await ScheduleClass.find({
+            studentId: req.user._id, 
+            startTime: { $gte: new Date() }, 
+            status: 'UPCOMING'
+        })
+        .populate('teacherId', 'firstName') 
+        .sort({ startTime: 1 });
+
+        res.json(classes);
+    } catch (error) {
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 

@@ -6,16 +6,16 @@ const bcrypt = require('bcryptjs');
 const { admin, protectAdmin, protect } = require('../middleware/authMiddleware');
 const User = require('../models/User');
 const Teacher = require('../models/TeacherModel');
+const ScheduleClass = require('../models/ScheduleClass');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '1d', // Token expires in 1 day
+        expiresIn: '1d', 
     });
 };
 
 router.post('/register', async (req, res) => {
     try {
-        // const { firstName, lastName, email, password, phoneNumber, adminAddress, country, adminAge,role } = req.body;
 
         const {
             firstName,
@@ -23,9 +23,9 @@ router.post('/register', async (req, res) => {
             email,
             password,
             phoneNumber,
-            userAddress, // Changed from adminAddress to match your frontend
+            userAddress, 
             country,
-            userAge,      // Changed from adminAge to match your frontend
+            userAge,      
             role
         } = req.body;
 
@@ -44,9 +44,9 @@ router.post('/register', async (req, res) => {
             email,
             password: hashedPassword,
             phoneNumber,
-            adminAddress: userAddress, // Map the frontend 'userAddress' to backend 'adminAddress'
+            adminAddress: userAddress, 
             country,
-            adminAge: userAge,         // Map the frontend 'userAge' to backend 'adminAge'
+            adminAge: userAge,         
             role: role || 'admin'
         });
         await admin.save();
@@ -84,7 +84,7 @@ router.post('/login', async (req, res) => {
     }
 })
 
-router.get('/alluser', protectAdmin,admin, async (req, res) => {
+router.get('/alluser', protectAdmin, admin, async (req, res) => {
     try {
 
         const users = await User.find({}).select('-password')
@@ -97,9 +97,9 @@ router.get('/alluser', protectAdmin,admin, async (req, res) => {
         console.error('Error fetching users', error)
         res.status(500).json({ msg: "Server error" })
     }
-}) 
+})
 
-router.get('/alladmin',async(req,res)=>{
+router.get('/alladmin', async (req, res) => {
     try {
         const admins = await Admin.find({}).select('-password')
         if (admins) {
@@ -141,13 +141,11 @@ router.put('/deallocate', protectAdmin, admin, async (req, res) => {
     const { teacherId, studentId } = req.body;
 
     try {
-        // Remove student ID from the Teacher's array
         const updateTeacher = Teacher.findByIdAndUpdate(
             teacherId,
-            { $pull: { students: studentId } } // $pull removes the specific ID
+            { $pull: { students: studentId } } 
         );
 
-        // Clear the teacher field from the Student record
         const updateStudent = User.findByIdAndUpdate(
             studentId,
             { $set: { teacher: null } }
@@ -158,6 +156,78 @@ router.put('/deallocate', protectAdmin, admin, async (req, res) => {
         res.status(200).json({ msg: 'Teacher removed successfully' });
     } catch (error) {
         res.status(500).json({ msg: 'Server error during deallocation' });
+    }
+});
+
+router.post('/schedule-class', protect, admin, async (req, res) => {
+    try {
+        const { studentId, teacherId, subject, startTime, durationInMinutes } = req.body;
+        if (!studentId || !teacherId || !startTime) {
+            return res.status(400).json({ msg: "Please provide all required fields" });
+        }
+
+        const start = new Date(startTime);
+        const end = new Date(start.getTime() + durationInMinutes * 60000);
+        const conflict = await Schedule.findOne({
+            teacherId,
+            $or: [
+                { startTime: { $lt: end, $gte: start } }, 
+                { endTime: { $gt: start, $lte: end } }    
+            ]
+        });
+
+        if (conflict) {
+            return res.status(400).json({ msg: "Teacher is already booked for this time slot" });
+        }
+
+        const newClass = await ScheduleClass.create({
+            studentId,
+            teacherId,
+            subject,
+            startTime: start,
+            endTime: end,
+        });
+
+        res.status(201).json(newClass);
+
+    } catch (error) {
+        console.error("SCHEDULING_ERROR:", error.message);
+        res.status(500).json({ msg: 'Server Error', error: error.message });
+    }
+});
+
+router.post('/schedule-class-recurring', protectAdmin, admin, async (req, res) => {
+    try {
+        const { studentId, teacherId, subject, startTime, frequency, totalDays, durationInMinutes } = req.body;
+        
+        const scheduleBatch = [];
+        let currentStart = new Date(startTime);
+        const interval = frequency === 'daily' ? 1 : 7; 
+        
+        const occurrences = frequency === 'once' ? 1 : Math.ceil(totalDays / interval);
+
+        for (let i = 0; i < occurrences; i++) {
+            const start = new Date(currentStart);
+            const end = new Date(start.getTime() + durationInMinutes * 60000);
+
+            scheduleBatch.push({
+                studentId,
+                teacherId,
+                subject,
+                startTime: start,
+                endTime: end,
+                status: 'UPCOMING'
+            });
+
+            currentStart.setDate(currentStart.getDate() + interval);
+        }
+
+        await ScheduleClass.insertMany(scheduleBatch);
+
+        res.status(201).json({ msg: `Successfully scheduled ${occurrences} classes.` });
+    } catch (error) {
+        console.error("RECURRING_ERROR:", error.message);
+        res.status(500).json({ msg: 'Server Error', error: error.message });
     }
 });
 

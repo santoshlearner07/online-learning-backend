@@ -48,7 +48,7 @@ const UserSchema = new mongoose.Schema({
         default: 'NOT_SCHEDULED'
     },
     demoSlot: {
-        type: Date, // Stores the specific time for the 1:1 session
+        type: Date, 
     },
     teacher: {
         type: mongoose.Schema.Types.ObjectId,
