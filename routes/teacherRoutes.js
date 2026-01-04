@@ -4,6 +4,7 @@ const Teacher = require('../models/TeacherModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { protect } = require('../middleware/authMiddleware');
+const ScheduleClass = require('../models/ScheduleClass');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -71,18 +72,54 @@ router.get('/get-teachers', async (req, res) => {
 
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
-
     const teacher = await Teacher.findOne({ email });
-    if (teacher) {
+
+    if (teacher && (await bcrypt.compare(password, teacher.password))) {
         res.json({
             _id: teacher._id,
             firstName: teacher.firstName,
             email: teacher.email,
+            role: 'teacher',
             token: generateToken(teacher._id),
         });
     } else {
         res.status(401).json({ msg: 'Invalid email or password' });
     }
-})
+});
+
+router.get('/dashboard-data', protect, async (req, res) => {
+    try {
+        if (!req.user?._id) {
+            return res.status(401).json({ msg: "User data missing from request" });
+        }
+
+        const teacherId = req.user._id;
+        const teacherInfo = await Teacher.findById(teacherId).populate('students');
+        
+        if (!teacherInfo) {
+            return res.status(404).json({ msg: "Teacher not found" });
+        }
+
+        const upcomingClasses = await ScheduleClass.find({
+            teacherId: req.user._id,
+            startTime: { $gte: new Date() }
+        }).populate('studentId');
+
+        res.json({
+            profile: {
+                firstName: teacherInfo.firstName,
+                email: teacherInfo.email,
+                subject: teacherInfo.subject,
+                qualification: teacherInfo.qualification,
+                experience: teacherInfo.experience
+            },
+            students: teacherInfo.students || [],
+            classes: upcomingClasses || []
+        });
+    } catch (error) {
+        console.error("DETAILED_ERROR:", error); // 👈 This shows the real error in terminal
+        res.status(500).json({ msg: "Server Error", error: error.message });
+    }
+});
 
 module.exports = router;

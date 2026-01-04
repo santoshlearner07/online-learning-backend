@@ -1,29 +1,30 @@
 
 const jwt = require('jsonwebtoken');
 const User = require('../models/User'); // Adjust path to your User model
-const Admin = require('../models/AdminModal')
+const Admin = require('../models/AdminModal');
+const Teacher = require('../models/TeacherModel');
  
 const protect = async (req, res, next) => {
+    
     let token;
-    // console.log(token)
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {
-            //  Get token from header (e.g., "Bearer XXX.YYY.ZZZ")
             token = req.headers.authorization.split(' ')[1];
-
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            req.user = await User.findById(decoded.id).select('-password'); 
+                const teacher = await Teacher.findById(decoded.id).select('-password');
+                const student = await User.findById(decoded.id).select('-password');
+            req.user = teacher || student;
+            req.user = await Teacher.findById(decoded.id).select('-password');
+            
+            if (!req.user) {
+                return res.status(401).json({ msg: 'User not found in database' });
+            }
 
-            // Move to the next middleware/route handler
             next();
-
         } catch (error) {
-            console.error('JWT verification failed:', error);
             res.status(401).json({ msg: 'Not authorized, token failed' });
         }
-    }
-
-    if (!token) {
+    } else {
         res.status(401).json({ msg: 'Not authorized, no token' });
     }
 };
