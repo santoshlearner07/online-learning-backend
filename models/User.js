@@ -55,6 +55,14 @@ const UserSchema = new mongoose.Schema({
         ref: 'Teacher',
         default: null
     },
+    isPaid: { type: Boolean, default: false },
+    paymentStatus: { 
+        type: String, 
+        enum: ['PENDING', 'AWAITING_VERIFICATION', 'PAID', 'REJECTED'], 
+        default: 'PENDING' 
+    },
+    paymentDate: { type: Date },
+    paymentReference: { type: String },
 }, {
     timestamps: true
 });

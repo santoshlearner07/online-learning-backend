@@ -11,11 +11,11 @@ const protect = async (req, res, next) => {
         try {
             token = req.headers.authorization.split(' ')[1];
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-                const teacher = await Teacher.findById(decoded.id).select('-password');
-                const student = await User.findById(decoded.id).select('-password');
+              const [teacher, student] = await Promise.all([
+                Teacher.findById(decoded.id).select('-password'),
+                User.findById(decoded.id).select('-password')
+            ]);
             req.user = teacher || student;
-            req.user = await Teacher.findById(decoded.id).select('-password');
-            
             if (!req.user) {
                 return res.status(401).json({ msg: 'User not found in database' });
             }

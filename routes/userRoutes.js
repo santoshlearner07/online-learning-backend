@@ -92,7 +92,6 @@ router.put('/demo-booking', protect, async (req, res) => {
 
 router.get('/profile', protect, async (req, res) => {
     const user = await User.findById(req.user._id).select('-password');
-
     if (user) {
         res.json(user);
     } else {
@@ -154,6 +153,36 @@ router.get('/my-schedule',protect, async (req, res) => {
         res.json(classes);
     } catch (error) {
         res.status(500).json({ msg: 'Server Error' });
+    }
+});
+
+router.post('/submit-payment', protect, async (req, res) => {
+    try {
+        const { reference } = req.body;
+
+        if (!reference) {
+            return res.status(400).json({ msg: "Please provide a transaction reference or name." });
+        }
+
+        const student = await User.findById(req.user._id);
+        
+        if (!student) {
+            return res.status(404).json({ msg: "User not found." });
+        }
+
+        student.paymentStatus = 'AWAITING_VERIFICATION';
+        student.paymentReference = reference;
+        
+        await student.save();
+
+        res.status(200).json({ 
+            msg: "Payment reference submitted successfully. Waiting for Admin approval.",
+            status: student.paymentStatus 
+        });
+
+    } catch (error) {
+        console.error("Payment Submission Error:", error.message);
+        res.status(500).json({ msg: "Server error during payment submission" });
     }
 });
 

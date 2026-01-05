@@ -236,4 +236,49 @@ router.post('/schedule-class-recurring', protectAdmin, admin, async (req, res) =
     }
 });
 
+router.put('/verify-payment/:studentId', protectAdmin, admin, async (req, res) => {
+    try {
+        const { status } = req.body; // Expecting 'PAID' or 'REJECTED'
+        const { studentId } = req.params;
+
+        const updateFields = {
+            paymentStatus: status,
+            isPaid: status === 'PAID',
+            // ⭐️ Record exact date and time when payment is officially confirmed
+            paymentDate: status === 'PAID' ? new Date() : null 
+        };
+
+        const updatedStudent = await User.findByIdAndUpdate(
+            studentId,
+            { $set: updateFields },
+            { new: true }
+        ).select('-password');
+
+        res.status(200).json({ 
+            msg: `Student payment status updated to ${status}`, 
+            data: updatedStudent 
+        });
+
+    } catch (error) {
+        console.error("Payment Verification Error:", error.message);
+        res.status(500).json({ msg: "Server error during verification" });
+    }
+});
+router.get('/payment-stats', protect, admin, async (req, res) => {
+    try {
+        const paidStudents = await User.find({ isPaid: true }).select('firstName lastName paymentDate subject');
+        
+        // Calculate total (Assuming a flat fee, e.g., £50)
+        const totalRevenue = paidStudents.length * 50; 
+
+        res.json({
+            count: paidStudents.length,
+            totalRevenue: `£${totalRevenue}`,
+            history: paidStudents
+        });
+    } catch (error) {
+        res.status(500).json({ msg: "Error fetching stats" });
+    }
+});
+
 module.exports = router; 

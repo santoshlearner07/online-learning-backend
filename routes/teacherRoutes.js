@@ -117,7 +117,7 @@ router.get('/dashboard-data', protect, async (req, res) => {
             classes: upcomingClasses || []
         });
     } catch (error) {
-        console.error("DETAILED_ERROR:", error); // 👈 This shows the real error in terminal
+        console.error("DETAILED_ERROR:", error);
         res.status(500).json({ msg: "Server Error", error: error.message });
     }
 });
