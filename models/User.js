@@ -42,14 +42,19 @@ const UserSchema = new mongoose.Schema({
     subject: {
         type: String,
     },
+    acceptedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Teacher',
+        default: null
+    },
     demoStatus: {
         type: String,
-        enum: ['NOT_SCHEDULED', 'SCHEDULED', 'COMPLETED', 'MISSED'],
-        default: 'NOT_SCHEDULED'
+        enum: ['PENDING', 'SCHEDULED', 'ACCEPTED', 'ALLOCATED', 'COMPLETED'],
+        default: 'PENDING'
     },
     demoSlot: {
         type: Date,
-        default:null 
+        default: null
     },
     teacher: {
         type: mongoose.Schema.Types.ObjectId,
@@ -57,10 +62,10 @@ const UserSchema = new mongoose.Schema({
         default: null
     },
     isPaid: { type: Boolean, default: false },
-    paymentStatus: { 
-        type: String, 
-        enum: ['PENDING', 'AWAITING_VERIFICATION', 'PAID', 'REJECTED'], 
-        default: 'PENDING' 
+    paymentStatus: {
+        type: String,
+        enum: ['PENDING', 'AWAITING_VERIFICATION', 'PAID', 'REJECTED'],
+        default: 'PENDING'
     },
     paymentDate: { type: Date },
     paymentReference: { type: String },

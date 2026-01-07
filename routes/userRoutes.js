@@ -8,7 +8,7 @@ const ScheduleClass = require('../models/ScheduleClass');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '1d', 
+        expiresIn: '1d',
     });
 };
 
@@ -74,6 +74,9 @@ router.put('/demo-booking', protect, async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
+        if (user.demoStatus !== 'PENDING' && user.demoSlot) {
+            return res.status(400).json({ msg: "You already have a demo scheduled." });
+        }
         user.demoSlot = new Date(demoSlot);
         user.demoStatus = 'SCHEDULED';
         user.subject = req.body.subject;
@@ -83,7 +86,7 @@ router.put('/demo-booking', protect, async (req, res) => {
             message: 'Demo scheduled successfully',
             demoStatus: user.demoStatus,
             demoSlot: user.demoSlot,
-            subject:user.subject
+            subject: user.subject
         });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error });
@@ -140,15 +143,15 @@ router.put('/profile', protect, async (req, res) => {
     }
 });
 
-router.get('/my-schedule',protect, async (req, res) => {
+router.get('/my-schedule', protect, async (req, res) => {
     try {
         const classes = await ScheduleClass.find({
-            studentId: req.user._id, 
-            startTime: { $gte: new Date() }, 
+            studentId: req.user._id,
+            startTime: { $gte: new Date() },
             status: 'UPCOMING'
         })
-        .populate('teacherId', 'firstName') 
-        .sort({ startTime: 1 });
+            .populate('teacherId', 'firstName')
+            .sort({ startTime: 1 });
 
         res.json(classes);
     } catch (error) {
@@ -165,19 +168,19 @@ router.post('/submit-payment', protect, async (req, res) => {
         }
 
         const student = await User.findById(req.user._id);
-        
+
         if (!student) {
             return res.status(404).json({ msg: "User not found." });
         }
 
         student.paymentStatus = 'AWAITING_VERIFICATION';
         student.paymentReference = reference;
-        
+
         await student.save();
 
-        res.status(200).json({ 
+        res.status(200).json({
             msg: "Payment reference submitted successfully. Waiting for Admin approval.",
-            status: student.paymentStatus 
+            status: student.paymentStatus
         });
 
     } catch (error) {

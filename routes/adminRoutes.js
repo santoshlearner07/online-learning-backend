@@ -281,4 +281,24 @@ router.get('/payment-stats', protect, admin, async (req, res) => {
     }
 });
 
+router.put('/allocate-demo/:studentId', protectAdmin, admin, async (req, res) => {
+    try {
+        const { teacherId } = req.body;
+        const student = await User.findById(req.params.studentId);
+
+        if (!student) return res.status(404).json({ msg: "Student not found" });
+
+        // Update the student record
+        student.teacher = teacherId;
+        student.acceptedBy = teacherId; // Admin is effectively "accepting" on their behalf
+        student.demoStatus = 'ALLOCATED'; // Distinct from 'ACCEPTED' to track Admin action
+        
+        await student.save();
+
+        res.json({ msg: "Teacher allocated successfully by Admin", student });
+    } catch (error) {
+        res.status(500).json({ msg: "Server Error" });
+    }
+});
+
 module.exports = router; 

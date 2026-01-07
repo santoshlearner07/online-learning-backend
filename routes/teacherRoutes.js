@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { protect } = require('../middleware/authMiddleware');
 const ScheduleClass = require('../models/ScheduleClass');
+const User = require('../models/User');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -119,6 +120,44 @@ router.get('/dashboard-data', protect, async (req, res) => {
     } catch (error) {
         console.error("DETAILED_ERROR:", error);
         res.status(500).json({ msg: "Server Error", error: error.message });
+    }
+});
+
+router.get('/available-demos', protect, async (req, res) => {
+    try {
+        // Double check your User model matches these field names exactly
+        const demos = await User.find({
+            role: 'student',            // Only students
+            demoStatus: 'SCHEDULED',    // Must be scheduled
+            acceptedBy: null,           // Not yet taken
+            teacher: null               // Not yet allocated
+        }).select('firstName lastName subject demoSlot demoStatus');
+        
+        res.json(demos || []); // Return empty array instead of null
+    } catch (error) {
+        console.error("Demo Fetch Error:", error);
+        res.status(500).json({ msg: "Error fetching demos", error: error.message });
+    }
+});
+
+router.put('/accept-demo/:studentId', protect, async (req, res) => {
+    try {
+        const student = await User.findById(req.params.studentId);
+
+        // Check if someone else already took it
+        if (student.acceptedBy || student.demoStatus === 'ACCEPTED') {
+            return res.status(400).json({ msg: "This demo has already been claimed by another teacher." });
+        }
+
+        student.acceptedBy = req.user._id; // The logged-in teacher
+        student.demoStatus = 'ACCEPTED';
+        student.teacher = req.user._id; // Automatically link them as the teacher
+        
+        await student.save();
+
+        res.json({ msg: "Demo accepted successfully!", student });
+    } catch (error) {
+        res.status(500).json({ msg: "Server Error" });
     }
 });
 
