@@ -9,7 +9,7 @@ const User = require('../models/User');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '1d', 
+        expiresIn: '1d',
     });
 };
 
@@ -40,14 +40,14 @@ router.post('/register', async (req, res) => {
             experience,
             qualification,
             phoneNumber,
-            password: hashedPassword 
+            password: hashedPassword
         });
 
         await teacher.save();
 
         res.status(201).json({
             msg: 'Teacher registered successfully',
-            tempPassword: generatedPassword, 
+            tempPassword: generatedPassword,
             data: teacher
         });
 
@@ -90,36 +90,53 @@ router.post('/login', async (req, res) => {
 
 router.get('/dashboard-data', protect, async (req, res) => {
     try {
+        const now = new Date();
         if (!req.user?._id) {
             return res.status(401).json({ msg: "User data missing from request" });
         }
 
         const teacherId = req.user._id;
+        const teacher = await Teacher.findById(teacherId);
+        const students = await User.find({ teacher: teacherId });
         const teacherInfo = await Teacher.findById(teacherId).populate('students');
-        
+
+        const regularStudents = students.filter(s => s.isPaid === true);
+        const upcomingDemos = students.filter(s =>
+            (s.demoStatus === 'ACCEPTED' || s.demoStatus === 'ALLOCATED') &&
+            new Date(s.demoSlot) > now
+        );
         if (!teacherInfo) {
             return res.status(404).json({ msg: "Teacher not found" });
         }
 
         const upcomingClasses = await ScheduleClass.find({
-            teacherId: req.user._id,
+            teacherId: teacherId,
             startTime: { $gte: new Date() }
-        }).populate('studentId');
+        }).populate('studentId', 'firstName lastName');
 
         res.json({
-            profile: {
-                firstName: teacherInfo.firstName,
-                email: teacherInfo.email,
-                subject: teacherInfo.subject,
-                qualification: teacherInfo.qualification,
-                experience: teacherInfo.experience
-            },
-            students: teacherInfo.students || [],
-            classes: upcomingClasses || []
+            profile: teacher,
+            students: regularStudents,
+            demos: upcomingDemos,
+            classes: upcomingClasses
         });
     } catch (error) {
         console.error("DETAILED_ERROR:", error);
         res.status(500).json({ msg: "Server Error", error: error.message });
+    }
+});
+
+router.put('/complete-demo/:studentId', protect, async (req, res) => {
+    try {
+        const student = await User.findById(req.params.studentId);
+        if (!student) return res.status(404).json({ msg: "Student not found" });
+
+        student.demoStatus = 'COMPLETED';
+        await student.save();
+
+        res.json({ msg: "Demo marked as completed. Admin has been notified.", student });
+    } catch (error) {
+        res.status(500).json({ msg: "Server Error" });
     }
 });
 
@@ -132,7 +149,7 @@ router.get('/available-demos', protect, async (req, res) => {
             acceptedBy: null,           // Not yet taken
             teacher: null               // Not yet allocated
         }).select('firstName lastName subject demoSlot demoStatus');
-        
+
         res.json(demos || []); // Return empty array instead of null
     } catch (error) {
         console.error("Demo Fetch Error:", error);
@@ -152,7 +169,7 @@ router.put('/accept-demo/:studentId', protect, async (req, res) => {
         student.acceptedBy = req.user._id; // The logged-in teacher
         student.demoStatus = 'ACCEPTED';
         student.teacher = req.user._id; // Automatically link them as the teacher
-        
+
         await student.save();
 
         res.json({ msg: "Demo accepted successfully!", student });
