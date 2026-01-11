@@ -301,4 +301,35 @@ router.put('/allocate-demo/:studentId', protectAdmin, admin, async (req, res) =>
     }
 });
 
+// routes/adminRoutes.js
+
+router.get('/teacher-activity/:id', protectAdmin, admin, async (req, res) => {
+    try {
+        const teacherId = req.params.id;
+
+        const teacher = await Teacher.findById(teacherId).select('-password');
+
+        const students = await User.find({ teacher: teacherId })
+            .select('firstName lastName email isPaid demoStatus demoSlot subject');
+
+        const classes = await ScheduleClass.find({ teacherId })
+            .populate('studentId', 'firstName lastName')
+            .sort({ startTime: -1 }); // Newest first
+
+        const now = new Date();
+        const pastDemos = students.filter(s => s.demoSlot && new Date(s.demoSlot) < now);
+        const futureDemos = students.filter(s => s.demoSlot && new Date(s.demoSlot) >= now);
+
+        res.json({
+            profile: teacher,
+            students: students.filter(s => s.isPaid),
+            pastDemos,
+            futureDemos,
+            allClasses: classes
+        });
+    } catch (error) {
+        res.status(500).json({ msg: "Server Error", error: error.message });
+    }
+});
+
 module.exports = router; 

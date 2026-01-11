@@ -6,14 +6,18 @@ const TeacherSchema = new mongoose.Schema({
     experience: { type: Number },
     qualification: { type: String },
     phoneNumber: { type: Number },
-    password:{type:String},
+    password: { type: String },
     students: [
         {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'User' 
+            ref: 'User'
         }
     ],
-    role: { type: String, default: 'teacher' }
+    role: { type: String, default: 'teacher' }, 
+    lastActive: {
+        type: Date,
+        default: Date.now
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Teacher', TeacherSchema);

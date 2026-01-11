@@ -74,7 +74,10 @@ router.get('/get-teachers', async (req, res) => {
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     const teacher = await Teacher.findOne({ email });
-
+    if (teacher) {
+        teacher.lastActive = new Date();
+        await teacher.save();
+    }
     if (teacher && (await bcrypt.compare(password, teacher.password))) {
         res.json({
             _id: teacher._id,
@@ -133,7 +136,7 @@ router.put('/complete-demo/:studentId', protect, async (req, res) => {
 
         student.demoStatus = 'COMPLETED';
         await student.save();
-
+        await Teacher.findByIdAndUpdate(req.user._id, { lastActive: new Date() });
         res.json({ msg: "Demo marked as completed. Admin has been notified.", student });
     } catch (error) {
         res.status(500).json({ msg: "Server Error" });
@@ -177,5 +180,7 @@ router.put('/accept-demo/:studentId', protect, async (req, res) => {
         res.status(500).json({ msg: "Server Error" });
     }
 });
+
+
 
 module.exports = router;
