@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { protect } = require('../middleware/authMiddleware');
 const ScheduleClass = require('../models/ScheduleClass');
+const Teacher = require('../models/TeacherModel');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -186,6 +187,31 @@ router.post('/submit-payment', protect, async (req, res) => {
     } catch (error) {
         console.error("Payment Submission Error:", error.message);
         res.status(500).json({ msg: "Server error during payment submission" });
+    }
+});
+
+router.delete('/delete-my-account',protect, async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ msg: "User not found" });
+
+        await Promise.all([
+            ScheduleClass.deleteMany({ studentId: userId }),
+            
+            Teacher.updateMany(
+                { students: userId }, 
+                { $pull: { students: userId } }
+            ),
+
+            User.findByIdAndDelete(userId)
+        ]);
+
+        res.status(200).json({ msg: "Account and all associated data deleted successfully." });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: "Server Error during deletion" });
     }
 });
 
