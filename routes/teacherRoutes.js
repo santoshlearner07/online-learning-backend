@@ -115,7 +115,7 @@ router.get('/dashboard-data', protect, async (req, res) => {
         const upcomingClasses = await ScheduleClass.find({
             teacherId: teacherId,
             startTime: { $gte: new Date() }
-        }).populate('studentId', 'firstName lastName');
+        }).populate('studentId', 'firstName lastName').sort({ startTime: 1 });
 
         res.json({
             profile: teacher,
