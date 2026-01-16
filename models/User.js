@@ -69,9 +69,14 @@ const UserSchema = new mongoose.Schema({
     },
     paymentDate: { type: Date },
     paymentReference: { type: String },
-}, {
-    timestamps: true
-});
+    isVerified: { type: Boolean, default: false },
+    verificationToken: { type: String },
+    verificationExpire: { type: Date }
+    ,
+},
+    {
+        timestamps: true
+    });
 
 UserSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);

@@ -3,6 +3,8 @@ const router = express.Router();
 const User = require('../models/User'); // Adjust path as needed
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto'); 
+const { sendVerificationEmail } = require('../utils/emailService');
 const { protect } = require('../middleware/authMiddleware');
 const ScheduleClass = require('../models/ScheduleClass');
 const Teacher = require('../models/TeacherModel');
@@ -17,36 +19,74 @@ router.post('/register', async (req, res) => {
     try {
         const { firstName, lastName, email, password, phoneNumber, userAddress, country, userAge, role } = req.body;
 
-        if (!firstName || !email) {
-            return res.status(400).json({ msg: 'Please enter all required fields.' });
-        }
-
-        let user = await User.findOne({ email });
-        if (user) {
+        // 1. Check if user already exists
+        let existingUser = await User.findOne({ email });
+        if (existingUser) {
             return res.status(400).json({ msg: 'User with this email already exists.' });
         }
+
+        // 2. Hash Password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-        user = new User({
-            firstName, lastName, email, password: hashedPassword, phoneNumber, userAddress, country, userAge, role
+
+        // 3. Generate Verification Token
+        const token = crypto.randomBytes(20).toString('hex');
+
+        // 4. Create the NEW user instance
+        const user = new User({
+            firstName, 
+            lastName, 
+            email, 
+            password: hashedPassword, 
+            phoneNumber, 
+            userAddress, 
+            country, 
+            userAge, 
+            role,
+            verificationToken: token, // ⭐️ Assign directly here
+            verificationExpire: Date.now() + 24 * 60 * 60 * 1000 // 24 Hours
         });
+
+        // 5. Save to Database
         await user.save();
 
+        // 6. Send Email (Make sure the function variable names match)
+        await sendVerificationEmail(user.email, token);
+
         res.status(201).json({
-            msg: 'User registered successfully',
-            data: user
+            msg: 'Registration successful! Please check your email to verify your account.',
+            data: { id: user._id, email: user.email } // Don't send the password back!
         });
 
     } catch (err) {
-        console.error(err.message);
+        console.error("Registration Error:", err.message);
         res.status(500).send('Server Error');
     }
+});
+
+router.get('/verify-email/:token', async (req, res) => {
+    const user = await User.findOne({
+        verificationToken: req.params.token,
+        verificationExpire: { $gt: Date.now() }
+    });
+
+    if (!user) return res.status(400).send("Invalid or expired token.");
+
+    user.isVerified = true;
+    user.verificationToken = undefined; // Clear the token
+    user.verificationExpire = undefined;
+    await user.save();
+
+    res.send("<h1>Email Verified!</h1><p>You can now log in to the dashboard.</p>");
 });
 
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
+    if (!user.isVerified) {
+    return res.status(401).json({ msg: "Please verify your email before logging in." });
+}
     if (user && (await user.matchPassword(password))) {
         res.json({
             _id: user._id,
@@ -190,7 +230,7 @@ router.post('/submit-payment', protect, async (req, res) => {
     }
 });
 
-router.delete('/delete-my-account',protect, async (req, res) => {
+router.delete('/delete-my-account', protect, async (req, res) => {
     try {
         const userId = req.user._id;
 
@@ -199,9 +239,9 @@ router.delete('/delete-my-account',protect, async (req, res) => {
 
         await Promise.all([
             ScheduleClass.deleteMany({ studentId: userId }),
-            
+
             Teacher.updateMany(
-                { students: userId }, 
+                { students: userId },
                 { $pull: { students: userId } }
             ),
 
