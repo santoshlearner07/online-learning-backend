@@ -3,7 +3,7 @@ const router = express.Router();
 const User = require('../models/User'); // Adjust path as needed
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto'); 
+const crypto = require('crypto');
 const { sendVerificationEmail } = require('../utils/emailService');
 const { protect } = require('../middleware/authMiddleware');
 const ScheduleClass = require('../models/ScheduleClass');
@@ -19,44 +19,47 @@ router.post('/register', async (req, res) => {
     try {
         const { firstName, lastName, email, password, phoneNumber, userAddress, country, userAge, role } = req.body;
 
-        // 1. Check if user already exists
         let existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ msg: 'User with this email already exists.' });
         }
 
-        // 2. Hash Password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // 3. Generate Verification Token
         const token = crypto.randomBytes(20).toString('hex');
 
-        // 4. Create the NEW user instance
         const user = new User({
-            firstName, 
-            lastName, 
-            email, 
-            password: hashedPassword, 
-            phoneNumber, 
-            userAddress, 
-            country, 
-            userAge, 
+            firstName,
+            lastName,
+            email,
+            password: hashedPassword,
+            phoneNumber,
+            userAddress,
+            country,
+            userAge,
             role,
             verificationToken: token, // ⭐️ Assign directly here
             verificationExpire: Date.now() + 24 * 60 * 60 * 1000 // 24 Hours
         });
 
-        // 5. Save to Database
         await user.save();
 
-        // 6. Send Email (Make sure the function variable names match)
-        await sendVerificationEmail(user.email, token);
+        // await sendVerificationEmail(user.email, token);
 
-        res.status(201).json({
-            msg: 'Registration successful! Please check your email to verify your account.',
-            data: { id: user._id, email: user.email } // Don't send the password back!
-        });
+        // res.status(201).json({
+        //     msg: 'Registration successful! Please check your email to verify your account.',
+        //     data: { id: user._id, email: user.email } // Don't send the password back!
+        // });
+        try {
+            await sendVerificationEmail(user.email, token);
+            return res.status(201).json({ msg: 'Registration successful! Check email.' });
+        } catch (emailError) {
+            console.error("Email Error:", emailError);
+            return res.status(201).json({
+                msg: 'Account created, but verification email failed to send. Please contact admin.'
+            });
+        }
 
     } catch (err) {
         console.error("Registration Error:", err.message);
@@ -85,8 +88,8 @@ router.post('/login', async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user.isVerified) {
-    return res.status(401).json({ msg: "Please verify your email before logging in." });
-}
+        return res.status(401).json({ msg: "Please verify your email before logging in." });
+    }
     if (user && (await user.matchPassword(password))) {
         res.json({
             _id: user._id,
