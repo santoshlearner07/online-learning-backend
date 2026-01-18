@@ -45,25 +45,18 @@ router.post('/register', async (req, res) => {
 
         await user.save();
 
-        // await sendVerificationEmail(user.email, token);
+        res.status(201).json({
+            msg: 'Registration successful! Please check your email to verify your account.',
+        });
+sendVerificationEmail(user.email, token).catch(err => {
+        console.error("Background Email Error:", err.message);
+    });
 
-        // res.status(201).json({
-        //     msg: 'Registration successful! Please check your email to verify your account.',
-        //     data: { id: user._id, email: user.email } // Don't send the password back!
-        // });
-        try {
-            await sendVerificationEmail(user.email, token);
-            return res.status(201).json({ msg: 'Registration successful! Check email.' });
-        } catch (emailError) {
-            console.error("Email Error:", emailError);
-            return res.status(201).json({
-                msg: 'Account created, but verification email failed to send. Please contact admin.'
-            });
+    } catch (emailError) {
+        console.error("Email Error:", emailError);
+        if (!res.headersSent) {
+            res.status(500).json({ msg: 'Account created, but verification email failed to send. Please contact admin.' });
         }
-
-    } catch (err) {
-        console.error("Registration Error:", err.message);
-        res.status(500).send('Server Error');
     }
 });
 
