@@ -18,7 +18,7 @@ export const sendVerificationEmail = async (userEmail, token) => {
     const url = `https://itb-tution.vercel.app/verify-email/${token}`; 
 
     await transporter.sendMail({
-        from: `"ITB Tuition" ${process.env.EMAIL_USER}`,
+        from: `"ITB Tuition" <${process.env.EMAIL_USER}>`,
         to: userEmail,
         subject: "Verify Your Account",
         html: `Click <a href="${url}">here</a> to verify.`,
