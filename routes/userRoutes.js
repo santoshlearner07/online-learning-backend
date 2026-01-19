@@ -85,16 +85,18 @@ router.post('/login', async (req, res) => {
     }
     if (user && (await user.matchPassword(password))) {
         res.json({
-            _id: user._id,
-            firstName: user.firstName,
-            email: user.email,
-            lastName: user.lastName,
-            address: user.userAddress,
-            number: user.phoneNumber,
-            country: user.country,
-            age: user.userAge,
-            demoStatus: user.demoStatus,
             token: generateToken(user._id),
+            user:{
+                _id: user._id,
+                firstName: user.firstName,
+                email: user.email,
+                lastName: user.lastName,
+                address: user.userAddress,
+                phoneNumber: user.phoneNumber,
+                country: user.country,
+                userAge: user.userAge,
+                demoStatus: user.demoStatus,
+            },
         });
     } else {
         res.status(401).json({ msg: 'Invalid email or password' });
@@ -150,9 +152,9 @@ router.put('/profile', protect, async (req, res) => {
             user.lastName = req.body.lastName || user.lastName;
             user.email = req.body.email || user.email;
             user.userAddress = req.body.address || user.userAddress;
-            user.phoneNumber = req.body.number || user.phoneNumber;
+            user.phoneNumber = req.body.phoneNumber || user.phoneNumber;
             user.country = req.body.country || user.country;
-            user.userAge = req.body.age || user.userAge;
+            user.userAge = req.body.userAge || user.userAge;
 
             if (req.body.password) {
                 user.password = req.body.password;
@@ -166,9 +168,9 @@ router.put('/profile', protect, async (req, res) => {
                 lastName: updatedUser.lastName,
                 email: updatedUser.email,
                 address: updatedUser.userAddress,
-                number: updatedUser.phoneNumber,
+                phoneNumber: updatedUser.phoneNumber,
                 country: updatedUser.country,
-                age: updatedUser.userAge,
+                userAge: updatedUser.userAge,
                 token: req.headers.authorization?.split(' ')[1],
             });
         } else {

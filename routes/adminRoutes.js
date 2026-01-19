@@ -75,7 +75,7 @@ router.post('/login', async (req, res) => {
             email: admin.email,
             lastName: admin.lastName,
             address: admin.adminAddress,
-            number: admin.phoneNumber,
+            phoneNumber: admin.phoneNumber,
             country: admin.country,
             age: admin.adminAge,
             token: generateToken(admin._id),
