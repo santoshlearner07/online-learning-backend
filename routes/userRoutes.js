@@ -202,6 +202,15 @@ router.get('/student-stats', protect, async (req, res) => {
     try {
         const studentId = req.user.id;
 
+        await ScheduleClass.updateMany(
+            { 
+                studentId, 
+                status: 'UPCOMING', 
+                endTime: { $lt: new Date() } 
+            },
+            { $set: { status: 'COMPLETED' } }
+        );
+
         // const totalScheduled = await Schedule.countDocuments({ studentId });
 
         const completedClasses = await ScheduleClass.countDocuments({

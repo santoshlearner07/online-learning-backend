@@ -5,6 +5,7 @@ const userRoutes = require('./routes/userRoutes'); // Import the router
 const uploadRoutes = require('./routes/uploadRoutes')
 const adminRoutes = require('./routes/adminRoutes')
 const teacherRoutes = require('./routes/teacherRoutes')
+const initCronJobs = require('./utils/initCronJobs')
 connectDB();
 
 const app = express();
@@ -18,6 +19,7 @@ const corsOptions = {
     allowedHeaders: ["Content-Type", "Authorization"]
 };
 app.use(cors(corsOptions));
+initCronJobs();
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 app.use('/api', userRoutes);
