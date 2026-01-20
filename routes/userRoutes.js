@@ -48,9 +48,9 @@ router.post('/register', async (req, res) => {
         res.status(201).json({
             msg: 'Registration successful! Please check your email to verify your account.',
         });
-sendVerificationEmail(user.email, token).catch(err => {
-        console.error("Background Email Error:", err.message);
-    });
+        sendVerificationEmail(user.email, token).catch(err => {
+            console.error("Background Email Error:", err.message);
+        });
 
     } catch (emailError) {
         console.error("Email Error:", emailError);
@@ -86,7 +86,7 @@ router.post('/login', async (req, res) => {
     if (user && (await user.matchPassword(password))) {
         res.json({
             token: generateToken(user._id),
-            user:{
+            user: {
                 _id: user._id,
                 firstName: user.firstName,
                 email: user.email,
@@ -198,20 +198,20 @@ router.get('/my-schedule', protect, async (req, res) => {
     }
 });
 
-router.get('/student-stats', async (req, res) => {
+router.get('/student-stats', protect, async (req, res) => {
     try {
         const studentId = req.user.id;
 
         // const totalScheduled = await Schedule.countDocuments({ studentId });
 
-        const completedClasses = await Schedule.countDocuments({ 
-            studentId, 
-            status: 'COMPLETED' 
+        const completedClasses = await ScheduleClass.countDocuments({
+            studentId,
+            status: 'COMPLETED'
         });
 
-        const classesLeft = await Schedule.countDocuments({ 
-            studentId, 
-            status: 'UPCOMING' 
+        const classesLeft = await ScheduleClass.countDocuments({
+            studentId,
+            status: 'UPCOMING'
         });
 
         let level = "Beginner";
