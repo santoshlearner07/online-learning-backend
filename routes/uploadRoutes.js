@@ -1,7 +1,10 @@
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
-
+const express = require('express');
+const { protect } = require('../middleware/authMiddleware');
+const User = require('../models/User');
+const router = express.Router();
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -19,7 +22,7 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage: storage });
 
 
-router.post('/upload-profile', authMiddleware, upload.single('image'), async (req, res) => {
+router.post('/upload', protect, upload.single('image'), async (req, res) => {
     try {
         const imageUrl = req.file.path; 
         
@@ -34,3 +37,5 @@ router.post('/upload-profile', authMiddleware, upload.single('image'), async (re
         res.status(500).json({ msg: "Upload failed" });
     }
 });
+
+module.exports = router;
