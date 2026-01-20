@@ -198,6 +198,36 @@ router.get('/my-schedule', protect, async (req, res) => {
     }
 });
 
+router.get('/student-stats', async (req, res) => {
+    try {
+        const studentId = req.user.id;
+
+        // const totalScheduled = await Schedule.countDocuments({ studentId });
+
+        const completedClasses = await Schedule.countDocuments({ 
+            studentId, 
+            status: 'COMPLETED' 
+        });
+
+        const classesLeft = await Schedule.countDocuments({ 
+            studentId, 
+            status: 'UPCOMING' 
+        });
+
+        let level = "Beginner";
+        if (completedClasses > 12) level = "Intermediate";
+        if (completedClasses > 36) level = "Advanced";
+
+        res.json({
+            completedClasses,
+            classesLeft,
+            level
+        });
+    } catch (error) {
+        res.status(500).json({ msg: "Server Error" });
+    }
+});
+
 router.post('/submit-payment', protect, async (req, res) => {
     try {
         const { reference } = req.body;
